@@ -4,7 +4,7 @@ const cookieParser = require('cookie-parser');
 const hbs = require('hbs');
 const path = require('path');
 const bodyParser = require("body-parser");
-require('dotenv').config(); // Keep this only for local development
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -15,38 +15,35 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
 
-// Global Variable
+// Global variable
 app.locals.authUser = '';
 
-// === MongoDB Connection ===
+// MongoDB connection
 const DB_URI = process.env.MONGO_ATLAST_URI;
-
-// Debug log — see what URI you're trying to connect to
-console.log("MONGO URI from env:", DB_URI);
-
-// Safety check: throw if DB_URI is not found
 if (!DB_URI) {
-  throw new Error("MONGO_ATLAST_URI is not set. Please check your environment variables.");
+console.error('❌ Missing Mongo URI! Add MONGO_ATLAST_URI to your .env file.');
+process.exit(1);
 }
 
-mongoose.connect(DB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log("✅ Connected to MongoDB");
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-}).catch((error) => {
-  console.error("❌ MongoDB connection error:", error);
-  process.exit(1); // Exit the app
+mongoose.connect(DB_URI)
+.then(() => {
+console.log('✅ MongoDB connected');
+app.listen(PORT, () => {
+console.log(🚀 Server running on port ${PORT});
+});
+})
+.catch(err => {
+console.error('❌ MongoDB connection failed:', err.message);
+process.exit(1);
 });
 
-// Static Files
-const publicDirectory = path.join(__dirname, './public');
+// Set public directory for static files
+const publicDirectory = path.join(__dirname, 'public');
 app.use(express.static(publicDirectory));
 
-// Template Engine
+// Template engine setup
 app.set('view engine', 'hbs');
-hbs.registerPartials(path.join(__dirname, '/views/partials'));
+hbs.registerPartials(path.join(__dirname, 'views', 'partials'));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -55,9 +52,7 @@ const taskRoutes = require('./routes/taskRoutes');
 app.use(authRoutes);
 app.use(taskRoutes);
 
-// Fallback Route
+// Fallback route
 app.get('*', (req, res) => {
-  res.redirect('/login');
+res.redirect('/login');
 });
-
-
